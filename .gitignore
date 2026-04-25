@@ -1,0 +1,13 @@
+# Source files (not part of the portfolio)
+*.txt
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+tfplan
+
+# Secrets
+*.env
+.env*

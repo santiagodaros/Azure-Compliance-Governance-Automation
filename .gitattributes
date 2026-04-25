@@ -1,0 +1,7 @@
+* text=auto
+*.ps1 text eol=crlf
+*.json text eol=lf
+*.tf text eol=lf
+*.tfvars text eol=lf
+*.tfbackend text eol=lf
+*.md text eol=lf

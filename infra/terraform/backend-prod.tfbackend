@@ -1,0 +1,5 @@
+resource_group_name  = "rg-core-tfstate-prod"
+storage_account_name = "stcoretfstateprod"
+container_name       = "tfstate"
+key                  = "core-prod.terraform.tfstate"
+use_oidc             = true

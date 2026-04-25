@@ -1,0 +1,42 @@
+{
+  "properties": {
+    "displayName": "Inherit Tag 'Ambiente' from Resource Group",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "description": "Automatically applies the 'Ambiente' tag to any child resource that is missing it, inheriting the value from the parent Resource Group. Requires a Managed Identity with the Tag Contributor role for auto-remediation.",
+    "metadata": {
+      "category": "Tags",
+      "version": "1.0.0"
+    },
+    "parameters": {},
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "tags['Ambiente']",
+            "exists": "false"
+          },
+          {
+            "value": "[resourceGroup().tags['Ambiente']]",
+            "notEquals": ""
+          }
+        ]
+      },
+      "then": {
+        "effect": "modify",
+        "details": {
+          "roleDefinitionIds": [
+            "/providers/microsoft.authorization/roleDefinitions/4a9ae15a-e44a-4174-8b7a-7e1d58d91244"
+          ],
+          "operations": [
+            {
+              "operation": "add",
+              "field": "tags['Ambiente']",
+              "value": "[resourceGroup().tags['Ambiente']]"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

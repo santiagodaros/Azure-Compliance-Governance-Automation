@@ -1,0 +1,39 @@
+{
+  "properties": {
+    "displayName": "Mandatory Tag: 'Ambiente' on Resource Groups",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "Denies the creation of Resource Groups that do not include the mandatory tag 'Ambiente'. Allowed values are PROD, DESA, and PREPROD, matching the corporate environment taxonomy.",
+    "metadata": {
+      "category": "Tags",
+      "version": "1.0.0"
+    },
+    "parameters": {
+      "tagName": {
+        "type": "String",
+        "defaultValue": "Ambiente",
+        "metadata": {
+          "displayName": "Required Tag Name",
+          "description": "Name of the mandatory tag. Defaults to 'Ambiente'."
+        }
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Resources/subscriptions/resourceGroups"
+          },
+          {
+            "field": "[concat('tags[', parameters('tagName'), ']')]",
+            "exists": "false"
+          }
+        ]
+      },
+      "then": {
+        "effect": "deny"
+      }
+    }
+  }
+}

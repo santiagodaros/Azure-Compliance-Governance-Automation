@@ -1,0 +1,66 @@
+{
+  "properties": {
+    "displayName": "Enforce Naming Convention on Resource Groups",
+    "policyType": "Custom",
+    "mode": "All",
+    "description": "Denies the creation of Resource Groups that do not follow the corporate naming standard: RG-[ENV]-[SYSTEM]-[REGION]. Valid environment segments are -PROD-, -DESA-, and -PREPROD-.",
+    "metadata": {
+      "category": "Naming",
+      "version": "1.0.0"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "defaultValue": "Deny",
+        "allowedValues": [
+          "Deny",
+          "Audit",
+          "Disabled"
+        ],
+        "metadata": {
+          "displayName": "Policy Effect",
+          "description": "Deny blocks non-compliant resource groups. Use Audit for discovery mode before enforcing."
+        }
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Resources/resourceGroups"
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "field": "name",
+                  "like": "RG-*"
+                },
+                {
+                  "anyOf": [
+                    {
+                      "field": "name",
+                      "contains": "-PROD-"
+                    },
+                    {
+                      "field": "name",
+                      "contains": "-DESA-"
+                    },
+                    {
+                      "field": "name",
+                      "contains": "-PREPROD-"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]"
+      }
+    }
+  }
+}

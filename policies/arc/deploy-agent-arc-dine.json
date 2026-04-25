@@ -1,0 +1,109 @@
+{
+  "properties": {
+    "displayName": "Deploy Monitoring Agent on Azure Arc Windows Machines",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "description": "Deploys a monitoring agent to Azure Arc-enabled Windows servers if the CustomScriptExtension is not already present. The agent MSI is fetched from Azure Blob Storage using the Arc machine's System-Assigned Managed Identity — no SAS tokens or stored credentials required.",
+    "metadata": {
+      "category": "Azure Arc",
+      "version": "1.0.0"
+    },
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "defaultValue": "DeployIfNotExists",
+        "allowedValues": [
+          "DeployIfNotExists",
+          "AuditIfNotExists",
+          "Disabled"
+        ],
+        "metadata": {
+          "displayName": "Effect",
+          "description": "DeployIfNotExists installs the agent on non-compliant machines. AuditIfNotExists only reports them."
+        }
+      },
+      "agentBlobUrl": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Agent MSI Blob URL",
+          "description": "Full HTTPS URL to the agent .msi in Azure Blob Storage. Example: https://<account>.blob.core.windows.net/<container>/agent.msi"
+        }
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.HybridCompute/machines"
+          },
+          {
+            "field": "Microsoft.HybridCompute/machines/osType",
+            "equals": "Windows"
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]",
+        "details": {
+          "type": "Microsoft.HybridCompute/machines/extensions",
+          "roleDefinitionIds": [
+            "/providers/microsoft.authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
+          ],
+          "existenceCondition": {
+            "field": "Microsoft.HybridCompute/machines/extensions/instanceView.name",
+            "equals": "CustomScriptExtension"
+          },
+          "deployment": {
+            "properties": {
+              "mode": "incremental",
+              "parameters": {
+                "machineName": {
+                  "value": "[field('name')]"
+                },
+                "location": {
+                  "value": "[field('location')]"
+                },
+                "agentBlobUrl": {
+                  "value": "[parameters('agentBlobUrl')]"
+                }
+              },
+              "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "parameters": {
+                  "machineName": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "agentBlobUrl": {
+                    "type": "string"
+                  }
+                },
+                "resources": [
+                  {
+                    "type": "Microsoft.HybridCompute/machines/extensions",
+                    "apiVersion": "2022-11-10",
+                    "name": "[concat(parameters('machineName'), '/CustomScriptExtension')]",
+                    "location": "[parameters('location')]",
+                    "properties": {
+                      "publisher": "Microsoft.Compute",
+                      "type": "CustomScriptExtension",
+                      "typeHandlerVersion": "1.10",
+                      "autoUpgradeMinorVersion": true,
+                      "settings": {
+                        "commandToExecute": "[concat('powershell -NonInteractive -ExecutionPolicy Bypass -Command \"$token=(Invoke-RestMethod -Method Get -Uri ''http://localhost:40342/metadata/identity/oauth2/token?api-version=2019-11-01&resource=https://storage.azure.com/'' -Headers @{Metadata=''True''}).access_token; New-Item -ItemType Directory -Force -Path C:\\temp | Out-Null; Invoke-WebRequest -Uri ''', parameters('agentBlobUrl'), ''' -OutFile C:\\temp\\agent.msi -Headers @{Authorization=(''Bearer ''+$token);''x-ms-version''=''2019-12-12''}; Start-Process msiexec.exe -ArgumentList ''/i C:\\temp\\agent.msi /quiet /norestart'' -Wait\"')]"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
